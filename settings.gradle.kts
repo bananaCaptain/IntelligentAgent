@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "IntelligentAgent"
 include(":app")
- 
+include(":LlamaKotlin")
