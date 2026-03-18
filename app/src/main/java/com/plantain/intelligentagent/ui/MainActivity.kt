@@ -6,8 +6,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.plantain.intelligentagent.R
+import com.plantain.intelligentagent.ui.MainViewModel
+import androidx.activity.viewModels
 
 class MainActivity : AppCompatActivity() {
+
+    private val sharedViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
