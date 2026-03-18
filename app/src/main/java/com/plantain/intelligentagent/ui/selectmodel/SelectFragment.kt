@@ -4,32 +4,24 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.plantain.intelligentagent.R
+import com.plantain.intelligentagent.databinding.FragmentSelectBinding
 import com.plantain.intelligentagent.ui.MainViewModel
-import androidx.activity.viewModels
-import androidx.fragment.app.activityViewModels
 
-class SelectFragment : Fragment() {
+class SelectFragment : Fragment(R.layout.fragment_select) {
 
     private val sharedViewModel: MainViewModel by activityViewModels()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        return inflater.inflate(R.layout.fragment_select, container, false)
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<TextView>(R.id.textFirst).text = sharedViewModel.message
-        view.findViewById<Button>(R.id.btnToSecond).setOnClickListener {
+        val binding = FragmentSelectBinding.bind(view)
+        binding.textFirst.text = sharedViewModel.message
+        binding.btnToSecond.setOnClickListener {
             findNavController().navigate(R.id.action_first_to_second)
         }
     }
+
 }
