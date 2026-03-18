@@ -2,16 +2,25 @@ package com.plantain.intelligentagent.ui
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.plantain.intelligentagent.R
-import com.plantain.intelligentagent.ui.MainViewModel
-import androidx.activity.viewModels
+import com.plantain.intelligentagent.data.remote.QwenApiProvider
+import com.plantain.intelligentagent.data.remote.ZaiApiProvider
+import com.plantain.intelligentagent.data.repository.ModelRepository
 
 class MainActivity : AppCompatActivity() {
 
-    private val sharedViewModel: MainViewModel by viewModels()
+    private val sharedViewModel: MainViewModel by viewModels {
+        MainViewModel.getMainViewModelFactory(
+            ModelRepository(
+                qwenDataSource = QwenApiProvider.createDataSource(apiKey = "YOUR_QWEN_API_KEY"),
+                zaiDataSource = ZaiApiProvider.createDataSource(apiKey = "YOUR_ZAI_API_KEY")
+            )
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
