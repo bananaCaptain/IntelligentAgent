@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/selectFragment">
+
+    <fragment
+        android:id="@+id/selectFragment"
+        android:name="com.plantain.intelligentagent.ui.selectmodel.SelectFragment"
+        android:label="Select Fragment"
+        tools:layout="@layout/fragment_select">
+        <action
+            android:id="@+id/action_first_to_second"
+            app:destination="@id/executionFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/executionFragment"
+        android:name="com.plantain.intelligentagent.ui.executionmodel.ExecutionFragment"
+        android:label="Execution Fragment"
+        tools:layout="@layout/fragment_execution">
+        <action
+            android:id="@+id/action_second_to_first"
+            app:destination="@id/selectFragment" />
+    </fragment>
+
+</navigation>
