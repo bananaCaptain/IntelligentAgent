@@ -69,7 +69,8 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
         binding.btnSend.setOnClickListener {
             val text = binding.etMessage.text.toString().trim()
             if (text.isBlank()) return@setOnClickListener
-            sharedViewModel.sendMessage(text)
+//            sharedViewModel.sendMessage(text)
+            sharedViewModel.sendMessageToZai(text)
             binding.etMessage.text?.clear()
         }
     }

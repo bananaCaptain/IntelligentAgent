@@ -40,6 +40,28 @@ class MainViewModel(
         }
     }
 
+    fun sendMessageToZai(text: String) {
+        if (text.isBlank()) return
+        val current = _messages.value.toMutableList()
+        current.add(ChatMessage(text, true))
+        _messages.value = current
+
+        viewModelScope.launch {
+            runCatching { modelRepository.chatZai(text) }
+                .onSuccess { response ->
+                    val reply = response.choices?.firstOrNull()?.message?.content ?: ""
+                    val updated = _messages.value.toMutableList()
+                    updated.add(ChatMessage(if (reply.isBlank()) "(empty)" else reply, false))
+                    _messages.value = updated
+                }
+                .onFailure {
+                    val updated = _messages.value.toMutableList()
+                    updated.add(ChatMessage("请求失败", false))
+                    _messages.value = updated
+                }
+        }
+    }
+
 
     companion object {
         fun getMainViewModelFactory(modelRepository: ModelRepository)
