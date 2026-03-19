@@ -16,6 +16,7 @@ import com.plantain.intelligentagent.ui.MainViewModel
 import com.drake.brv.utils.linear
 import com.drake.brv.utils.models
 import com.drake.brv.utils.setup
+import android.widget.LinearLayout
 import android.widget.TextView
 import kotlinx.coroutines.launch
 
@@ -37,11 +38,20 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
             addType<ChatMessage>(R.layout.item_chat_message)
             onBind {
                 val message = getModel<ChatMessage>()
-                val textView = findView<TextView>(R.id.tvMessage)
-                textView.text = message.content
-                textView.setBackgroundColor(
-                    if (message.isUser) 0xFFD1E7FF.toInt() else 0xFFE8E8E8.toInt()
-                )
+                val userBubble = findView<LinearLayout>(R.id.userBubble)
+                val aiBubble = findView<LinearLayout>(R.id.aiBubble)
+                val userText = findView<TextView>(R.id.tvUserMessage)
+                val aiText = findView<TextView>(R.id.tvAiMessage)
+
+                if (message.isUser) {
+                    userBubble.visibility = View.VISIBLE
+                    aiBubble.visibility = View.GONE
+                    userText.text = message.content
+                } else {
+                    userBubble.visibility = View.GONE
+                    aiBubble.visibility = View.VISIBLE
+                    aiText.text = message.content
+                }
             }
         }
 
