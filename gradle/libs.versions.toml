@@ -13,6 +13,7 @@ navigation = "2.7.7"
 lifecycle = "2.8.7"
 retrofit = "2.11.0"
 gson = "2.11.0"
+brv = "1.6.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -29,6 +30,7 @@ androidx-lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+brv = { group = "com.github.liangjingkanji", name = "BRV", version.ref = "brv" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
