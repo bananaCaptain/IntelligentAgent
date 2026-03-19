@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object QwenApiProvider {
 
-    private const val BASE_URL = "https://dashscope.aliyuncs.com/api"
+    private const val BASE_URL = "https://dashscope.aliyuncs.com/api/"
 
     fun createService(): QwenService {
         return Retrofit.Builder()
