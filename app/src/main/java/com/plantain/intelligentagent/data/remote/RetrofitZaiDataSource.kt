@@ -39,7 +39,7 @@ class RetrofitZaiDataSource(
         }.onSuccess {
             Log.d(TAG, "response=$it")
         }.onFailure {
-            Log.e(TAG, "request failed: ${it.message}", it)
+            Log.e(TAG, "request failed: ${it::class.java.simpleName}: ${it.message}", it)
         }.getOrThrow()
     }
 }

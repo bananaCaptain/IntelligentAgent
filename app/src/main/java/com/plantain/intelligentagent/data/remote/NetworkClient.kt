@@ -17,7 +17,20 @@ object NetworkClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
+    private val responseLogger = HttpLoggingInterceptor { message ->
+        if (message.startsWith("<--")) {
+            android.util.Log.d("HttpResponse", message)
+        } else if (message.startsWith("{")) {
+            android.util.Log.d("HttpResponseBody", message)
+        } else {
+            android.util.Log.d(TAG, message)
+        }
+    }.apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
     val okHttpClient: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .addNetworkInterceptor(responseLogger)
         .build()
 }
