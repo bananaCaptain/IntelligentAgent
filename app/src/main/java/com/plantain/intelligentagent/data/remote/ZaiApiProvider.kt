@@ -10,6 +10,7 @@ object ZaiApiProvider {
     fun createService(): ZaiService {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(NetworkClient.okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ZaiService::class.java)

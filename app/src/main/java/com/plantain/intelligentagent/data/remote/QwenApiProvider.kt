@@ -10,6 +10,7 @@ object QwenApiProvider {
     fun createService(): QwenService {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(NetworkClient.okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(QwenService::class.java)
