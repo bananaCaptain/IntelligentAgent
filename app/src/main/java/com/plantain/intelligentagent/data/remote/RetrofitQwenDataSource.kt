@@ -19,12 +19,10 @@ class RetrofitQwenDataSource(
         return chat(
             QwenRequest(
                 model = model,
-                input = QwenRequest.Input(
-                    messages = listOf(
-                        QwenRequest.Message(
-                            role = "user",
-                            content = prompt
-                        )
+                messages = listOf(
+                    QwenRequest.Message(
+                        role = "user",
+                        content = prompt
                     )
                 )
             )
