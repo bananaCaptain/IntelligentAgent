@@ -1,6 +1,6 @@
 package com.plantain.llamakotlin
 
-class NativeLib {
+class LlamaKotlin {
 
     /**
      * A native method that is implemented by the 'llamakotlin' native library,

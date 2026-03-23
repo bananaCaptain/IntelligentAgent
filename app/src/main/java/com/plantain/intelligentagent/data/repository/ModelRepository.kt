@@ -7,14 +7,34 @@ import com.plantain.intelligentagent.data.model.ZaiRequest
 import com.plantain.intelligentagent.data.model.ZaiResponse
 import com.plantain.intelligentagent.data.remote.QwenDataSource
 import com.plantain.intelligentagent.data.remote.ZaiDataSource
+import com.plantain.llamakotlin.LlamaKotlin
 
 class ModelRepository(
     private val qwenDataSource: QwenDataSource,
-    private val zaiDataSource: ZaiDataSource
+    private val zaiDataSource: ZaiDataSource,
+    private val llamaKotlin: LlamaKotlin = LlamaKotlin()
 ) {
 
     private companion object {
         const val TAG = "ModelRepository"
+    }
+
+    init {
+        // Initialize llama backend
+        llamaKotlin.initBackend()
+    }
+
+    fun loadLocalModel(modelPath: String, nCtx: Int = 2048): Boolean {
+        Log.d(TAG, "Loading local model: $modelPath")
+        val loadResult = llamaKotlin.loadModel(modelPath)
+        if (loadResult != 0) return false
+        val ctxResult = llamaKotlin.prepareContext(nCtx)
+        return ctxResult == 0
+    }
+
+    suspend fun chatLocal(prompt: String): String {
+        Log.d(TAG, "Local chat(prompt=$prompt)")
+        return llamaKotlin.chat(prompt)
     }
 
     suspend fun chat(prompt: String): QwenResponse {

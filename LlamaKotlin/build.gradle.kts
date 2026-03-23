@@ -19,6 +19,9 @@ android {
                 cppFlags("-std=c++17")
             }
         }
+        ndk {
+            abiFilters.add("arm64-v8a")
+        }
     }
 
     buildTypes {

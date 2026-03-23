@@ -70,7 +70,8 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
             val text = binding.etMessage.text.toString().trim()
             if (text.isBlank()) return@setOnClickListener
 //            sharedViewModel.sendMessage(text)
-            sharedViewModel.sendMessageToZai(text)
+        //    sharedViewModel.sendMessageToZai(text)
+            sharedViewModel.sendMessageToLocal(text)
             binding.etMessage.text?.clear()
         }
     }

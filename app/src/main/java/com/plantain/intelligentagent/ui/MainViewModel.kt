@@ -63,6 +63,27 @@ class MainViewModel(
     }
 
 
+    fun sendMessageToLocal(text: String) {
+        if (text.isBlank()) return
+        val current = _messages.value.toMutableList()
+        current.add(ChatMessage(text, true))
+        _messages.value = current
+
+        viewModelScope.launch {
+            runCatching { modelRepository.chatLocal(text) }
+                .onSuccess { reply ->
+                    val updated = _messages.value.toMutableList()
+                    updated.add(ChatMessage(if (reply.isBlank()) "(empty)" else reply, false))
+                    _messages.value = updated
+                }
+                .onFailure {
+                    val updated = _messages.value.toMutableList()
+                    updated.add(ChatMessage("本地模型请求失败", false))
+                    _messages.value = updated
+                }
+        }
+    }
+
     companion object {
         fun getMainViewModelFactory(modelRepository: ModelRepository)
                 : ViewModelProvider.Factory {
