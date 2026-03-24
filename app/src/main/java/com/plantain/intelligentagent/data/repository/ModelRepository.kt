@@ -8,6 +8,8 @@ import com.plantain.intelligentagent.data.model.ZaiResponse
 import com.plantain.intelligentagent.data.remote.QwenDataSource
 import com.plantain.intelligentagent.data.remote.ZaiDataSource
 import com.plantain.llamakotlin.LlamaKotlin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class ModelRepository(
     private val qwenDataSource: QwenDataSource,
@@ -34,7 +36,10 @@ class ModelRepository(
 
     suspend fun chatLocal(prompt: String): String {
         Log.d(TAG, "Local chat(prompt=$prompt)")
-        return llamaKotlin.chat(prompt)
+       return withContext(Dispatchers.IO) {
+            // Ensure llama operations run on IO dispatcher
+            llamaKotlin.chat(prompt)
+        }
     }
 
     suspend fun chat(prompt: String): QwenResponse {

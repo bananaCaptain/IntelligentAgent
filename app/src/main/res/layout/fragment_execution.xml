@@ -34,6 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="输入消息"
+            android:text="3*3 = ？"
             android:imeOptions="actionSend"
             android:inputType="text"
             android:maxLines="3" />

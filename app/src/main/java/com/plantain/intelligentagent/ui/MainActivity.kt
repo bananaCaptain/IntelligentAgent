@@ -33,5 +33,18 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        val extFilesDir = getExternalFilesDir(null)
+        val qwen2BModel = "Qwen3.5-2B-Q4_K_M.gguf"
+        val modelPath = extFilesDir!!.absolutePath + "/" + qwen2BModel
+        //检查模型文件是否存在
+        val modelFile = java.io.File(modelPath)
+        if(modelFile.exists().not()) {
+            //打印模型不存在不加载模型
+            println("模型文件不存在，路径：$modelPath")
+            return
+        }
+        //加载模型库
+        sharedViewModel.loadLocalModel(modelPath)
+
     }
 }

@@ -62,6 +62,19 @@ class MainViewModel(
         }
     }
 
+    fun loadLocalModel(modelPath: String, nCtx: Int = 2048) {
+        viewModelScope.launch {
+            val success = modelRepository.loadLocalModel(modelPath, nCtx)
+            val current = _messages.value.toMutableList()
+            if (success) {
+                current.add(ChatMessage("本地模型加载成功", false))
+            } else {
+                current.add(ChatMessage("本地模型加载失败", false))
+            }
+            _messages.value = current
+        }
+    }
+
 
     fun sendMessageToLocal(text: String) {
         if (text.isBlank()) return
