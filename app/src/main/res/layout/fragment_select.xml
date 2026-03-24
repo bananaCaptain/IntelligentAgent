@@ -8,21 +8,57 @@
         android:id="@+id/textFirst"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
         android:text="Select Fragment"
         android:textSize="24sp"
-        app:layout_constraintBottom_toTopOf="@id/btnToSecond"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvServiceStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:text="未绑定服务"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textFirst" />
+
+    <Button
+        android:id="@+id/btnCallService"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="调用 getVerificationString"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvServiceStatus" />
+
+    <TextView
+        android:id="@+id/tvServiceResult"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="24dp"
+        android:text=""
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnCallService" />
 
     <Button
         android:id="@+id/btnToSecond"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:text="Go to Execution"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textFirst" />
+        app:layout_constraintTop_toBottomOf="@id/tvServiceResult" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

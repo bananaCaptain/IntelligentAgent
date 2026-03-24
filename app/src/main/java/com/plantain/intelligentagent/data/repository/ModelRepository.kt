@@ -5,15 +5,18 @@ import com.plantain.intelligentagent.data.model.QwenRequest
 import com.plantain.intelligentagent.data.model.QwenResponse
 import com.plantain.intelligentagent.data.model.ZaiRequest
 import com.plantain.intelligentagent.data.model.ZaiResponse
+import com.plantain.intelligentagent.data.aidl.IntelligentServiceDataSource
 import com.plantain.intelligentagent.data.remote.QwenDataSource
 import com.plantain.intelligentagent.data.remote.ZaiDataSource
 import com.plantain.llamakotlin.LlamaKotlin
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 
 class ModelRepository(
     private val qwenDataSource: QwenDataSource,
     private val zaiDataSource: ZaiDataSource,
+    private val intelligentServiceDataSource: IntelligentServiceDataSource,
     private val llamaKotlin: LlamaKotlin = LlamaKotlin()
 ) {
 
@@ -36,10 +39,18 @@ class ModelRepository(
 
     suspend fun chatLocal(prompt: String): String {
         Log.d(TAG, "Local chat(prompt=$prompt)")
-       return withContext(Dispatchers.IO) {
+        return withContext(Dispatchers.IO) {
             // Ensure llama operations run on IO dispatcher
             llamaKotlin.chat(prompt)
         }
+    }
+
+    val intelligentServiceBound: StateFlow<Boolean>
+        get() = intelligentServiceDataSource.isBound
+
+    suspend fun getServiceVerificationString(): String {
+        Log.d(TAG, "Calling IntelligentService.getVerificationString()")
+        return intelligentServiceDataSource.getVerificationString()
     }
 
     suspend fun chat(prompt: String): QwenResponse {

@@ -7,17 +7,21 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.plantain.intelligentagent.R
+import com.plantain.intelligentagent.data.aidl.IntelligentServiceDataSource
 import com.plantain.intelligentagent.data.remote.QwenApiProvider
 import com.plantain.intelligentagent.data.remote.ZaiApiProvider
 import com.plantain.intelligentagent.data.repository.ModelRepository
 
 class MainActivity : AppCompatActivity() {
 
+    private val intelligentServiceDataSource = IntelligentServiceDataSource()
+
     private val sharedViewModel: MainViewModel by viewModels {
         MainViewModel.getMainViewModelFactory(
             ModelRepository(
                 qwenDataSource = QwenApiProvider.createDataSource(apiKey = "YOUR_QWEN_API_KEY"),
-                zaiDataSource = ZaiApiProvider.createDataSource(apiKey = "YOUR_ZAI_API_KEY")
+                zaiDataSource = ZaiApiProvider.createDataSource(apiKey = "YOUR_ZAI_API_KEY"),
+                intelligentServiceDataSource = intelligentServiceDataSource
             )
         )
     }
@@ -46,5 +50,15 @@ class MainActivity : AppCompatActivity() {
         //加载模型库
         sharedViewModel.loadLocalModel(modelPath)
 
+    }
+
+    override fun onStart() {
+        super.onStart()
+        intelligentServiceDataSource.bind(this)
+    }
+
+    override fun onStop() {
+        intelligentServiceDataSource.unbind(this)
+        super.onStop()
     }
 }
