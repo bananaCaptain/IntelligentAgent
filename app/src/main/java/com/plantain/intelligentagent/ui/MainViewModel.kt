@@ -124,6 +124,59 @@ class MainViewModel(
         }
     }
 
+    fun getServiceLlamaSystemInfo() {
+        viewModelScope.launch {
+            runCatching { modelRepository.getServiceLlamaSystemInfo() }
+                .onSuccess { info ->
+                    _serviceResultText.value = info
+                }
+                .onFailure { error ->
+                    _serviceResultText.value = error.message ?: "获取 Llama 系统信息失败"
+                }
+        }
+    }
+
+    fun loadServiceLlamaModel(modelPath: String, nCtx: Int = 2048) {
+        if (modelPath.isBlank()) {
+            _serviceResultText.value = "模型路径为空"
+            return
+        }
+        viewModelScope.launch {
+            runCatching { modelRepository.loadLlamaModelViaService(modelPath, nCtx) }
+                .onSuccess { code ->
+                    _serviceResultText.value = if (code == 0) {
+                        "服务侧 Llama 模型加载成功"
+                    } else {
+                        "服务侧 Llama 模型加载失败，错误码: $code"
+                    }
+                }
+                .onFailure { error ->
+                    _serviceResultText.value = error.message ?: "服务侧 Llama 模型加载失败"
+                }
+        }
+    }
+
+    fun sendMessageToServiceLlama(text: String) {
+        if (text.isBlank()) return
+        val current = _messages.value.toMutableList()
+        current.add(ChatMessage(text, true))
+        _messages.value = current
+
+        viewModelScope.launch {
+            runCatching { modelRepository.chatWithLlamaViaService(text) }
+                .onSuccess { reply ->
+                    val updated = _messages.value.toMutableList()
+                    updated.add(ChatMessage(if (reply.isBlank()) "(empty)" else reply, false))
+                    _messages.value = updated
+                }
+                .onFailure {
+                    val updated = _messages.value.toMutableList()
+                    updated.add(ChatMessage("服务侧 Llama 请求失败", false))
+                    _messages.value = updated
+                }
+        }
+    }
+
     companion object {
         fun getMainViewModelFactory(modelRepository: ModelRepository)
                 : ViewModelProvider.Factory {
