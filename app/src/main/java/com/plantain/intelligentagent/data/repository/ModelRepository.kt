@@ -53,6 +53,24 @@ class ModelRepository(
         return intelligentServiceDataSource.getVerificationString()
     }
 
+    suspend fun getServiceLlamaSystemInfo(): String {
+        Log.d(TAG, "Calling IntelligentService.getLlamaSystemInfo()")
+        return intelligentServiceDataSource.getLlamaSystemInfo()
+
+    }
+
+    suspend fun loadLlamaModelViaService(modelPath: String, nCtx: Int = 2048): Int {
+        Log.d(TAG, "Calling IntelligentService.loadLlamaModel(path=$modelPath, nCtx=$nCtx)")
+        return intelligentServiceDataSource.loadLlamaModel(modelPath, nCtx)
+
+    }
+
+    suspend fun chatWithLlamaViaService(prompt: String): String {
+        Log.d(TAG, "Calling IntelligentService.chatWithLlama(prompt=$prompt)")
+        return intelligentServiceDataSource.chatWithLlama(prompt)
+
+    }
+
     suspend fun chat(prompt: String): QwenResponse {
         Log.d(TAG, "Qwen chat(prompt=$prompt)")
         return qwenDataSource.chat(prompt)
