@@ -17,14 +17,21 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags("-std=c++17")
+                abiFilters("arm64-v8a" /*, "armeabi-v7a", "x86", "x86_64"*/)
             }
-        }
-        ndk {
-            abiFilters.add("arm64-v8a")
         }
     }
 
     buildTypes {
+        debug {
+
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            isJniDebuggable = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -46,6 +53,7 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    ndkVersion = "29.0.13113456"
 }
 
 dependencies {

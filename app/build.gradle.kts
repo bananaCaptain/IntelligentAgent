@@ -56,6 +56,11 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.okhttp.logging)
     implementation(libs.brv)
+
+    //导入本地LlamaKotlin库
+    implementation(project(":LlamaKotlin"))
+
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
