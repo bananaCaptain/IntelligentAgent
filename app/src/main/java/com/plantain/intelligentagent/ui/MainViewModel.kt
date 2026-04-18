@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.File
 import kotlin.system.measureNanoTime
 
 class MainViewModel(
@@ -111,9 +112,10 @@ class MainViewModel(
     fun loadLocalModel(modelPath: String, nCtx: Int = 2048) {
         viewModelScope.launch {
             val success = modelRepository.loadLocalModel(modelPath, nCtx)
+            val modelName = File(modelPath).name.ifBlank { modelPath }
             val current = _messages.value.toMutableList()
             if (success) {
-                current.add(ChatMessage("本地模型加载成功", false))
+                current.add(ChatMessage("本地模型加载成功: $modelName", false))
             } else {
                 current.add(ChatMessage("本地模型加载失败", false))
             }
