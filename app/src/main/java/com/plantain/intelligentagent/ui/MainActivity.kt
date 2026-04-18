@@ -39,7 +39,8 @@ class MainActivity : AppCompatActivity() {
         }
         val extFilesDir = getExternalFilesDir(null)
         val qwen2BModel = "Qwen3.5-2B-Q4_K_M.gguf"
-        val modelPath = extFilesDir!!.absolutePath + "/" + qwen2BModel
+        val gemma2BModel = "gemma-4-E2B-it-Q4_K_M.gguf"
+        val modelPath = extFilesDir!!.absolutePath + "/" + gemma2BModel
         //检查模型文件是否存在
         val modelFile = java.io.File(modelPath)
         if(modelFile.exists().not()) {
@@ -49,7 +50,6 @@ class MainActivity : AppCompatActivity() {
         }
         //加载模型库
         sharedViewModel.loadLocalModel(modelPath)
-        sharedViewModel.loadServiceLlamaModel(modelPath)
 
     }
 
