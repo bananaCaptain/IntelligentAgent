@@ -71,12 +71,12 @@ class ModelRepository(
 
     }
 
-    suspend fun chat(prompt: String): QwenResponse {
+    suspend fun chatQwen(prompt: String): QwenResponse {
         Log.d(TAG, "Qwen chat(prompt=$prompt)")
         return qwenDataSource.chat(prompt)
     }
 
-    suspend fun chat(request: QwenRequest): QwenResponse {
+    suspend fun chatQwen(request: QwenRequest): QwenResponse {
         Log.d(TAG, "Qwen chat(request=$request)")
         return qwenDataSource.chat(request)
     }

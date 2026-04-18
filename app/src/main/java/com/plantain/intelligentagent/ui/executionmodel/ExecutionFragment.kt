@@ -96,7 +96,8 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
             if (text.isBlank()) return@setOnClickListener
 //            sharedViewModel.sendMessage(text)
         //    sharedViewModel.sendMessageToZai(text)
-            sharedViewModel.sendMessageToLocal(text)
+//            sharedViewModel.sendMessageToLocal(text)
+            sharedViewModel.sendMessageToServiceLlama(text)
             binding.etMessage.text?.clear()
         }
     }

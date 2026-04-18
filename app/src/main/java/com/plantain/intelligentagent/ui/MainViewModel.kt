@@ -59,7 +59,7 @@ class MainViewModel(
         }
     }
 
-    fun sendMessage(text: String) {
+    fun sendMessageQwen(text: String) {
         if (text.isBlank()) return
         appendUserMessage(text)
         appendLoadingMessage()
@@ -69,7 +69,7 @@ class MainViewModel(
             var inferenceSeconds = 0.0
             val result = runCatching {
                 val elapsedNanos = measureNanoTime {
-                    val response = modelRepository.chat(text)
+                    val response = modelRepository.chatQwen(text)
                     responseText = response.output?.text ?: ""
                 }
                 inferenceSeconds = elapsedNanos / 1_000_000_000.0

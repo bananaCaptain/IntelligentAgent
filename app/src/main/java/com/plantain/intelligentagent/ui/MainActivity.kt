@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         }
         //加载模型库
         sharedViewModel.loadLocalModel(modelPath)
+        sharedViewModel.loadServiceLlamaModel(modelPath)
 
     }
 
