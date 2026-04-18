@@ -29,12 +29,13 @@ class MainActivity : AppCompatActivity() {
 
         btnLoadModel.setOnClickListener {
             val extFilesDir = getExternalFilesDir(null)
-            val modelName = "Qwen3.5-2B-Q4_K_M.gguf"
-            val modelPath = extFilesDir?.absolutePath + "/" + modelName
+            val qwen2BModel = "Qwen3.5-2B-Q4_K_M.gguf"
+            val gemma2BModel = "gemma-4-E2B-it-Q4_K_M.gguf"
+            val modelPath = extFilesDir?.absolutePath + "/" + gemma2BModel
             val modelFile = File(modelPath)
 
             if (!modelFile.exists()) {
-                tvLoadResult.text = "模型不存在: $modelName"
+                tvLoadResult.text = "模型不存在: $gemma2BModel"
                 return@setOnClickListener
             }
 
@@ -48,7 +49,7 @@ class MainActivity : AppCompatActivity() {
 
                 val ctxCode = llamaKotlin.prepareContext(2048)
                 tvLoadResult.text = if (ctxCode == 0) {
-                    "加载成功: $modelName"
+                    "加载成功: $gemma2BModel"
                 } else {
                     "上下文初始化失败 code=$ctxCode"
                 }
