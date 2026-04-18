@@ -94,10 +94,14 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
         binding.btnSend.setOnClickListener {
             val text = binding.etMessage.text.toString().trim()
             if (text.isBlank()) return@setOnClickListener
-//            sharedViewModel.sendMessage(text)
-        //    sharedViewModel.sendMessageToZai(text)
-//            sharedViewModel.sendMessageToLocal(text)
-            sharedViewModel.sendMessageToServiceLlama(text)
+
+            when (binding.inferModeGroup.checkedRadioButtonId) {
+                R.id.rbNetworkInfer -> sharedViewModel.sendMessageToZai(text)
+                R.id.rbLocalInfer -> sharedViewModel.sendMessageToLocal(text)
+                R.id.rbServiceInfer -> sharedViewModel.sendMessageToServiceLlama(text)
+                else -> sharedViewModel.sendMessageToZai(text)
+            }
+
             binding.etMessage.text?.clear()
         }
     }
