@@ -4,5 +4,6 @@ data class ChatMessage(
     val content: String,
     val isUser: Boolean,
     val isLoading: Boolean = false,
-    val inferenceSeconds: Double? = null
+    val inferenceSeconds: Double? = null,
+    val inferenceMode: String? = null
 )

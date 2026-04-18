@@ -33,9 +33,9 @@ class MainViewModel(
         _messages.value = current
     }
 
-    private fun appendLoadingMessage() {
+    private fun appendLoadingMessage(inferenceMode: String) {
         val current = _messages.value.toMutableList()
-        current.add(ChatMessage("", isUser = false, isLoading = true))
+        current.add(ChatMessage("", isUser = false, isLoading = true, inferenceMode = inferenceMode))
         _messages.value = current
     }
 
@@ -44,7 +44,13 @@ class MainViewModel(
         val index = updated.indexOfLast { !it.isUser && it.isLoading }
         val finalText = if (reply.isBlank()) fallback else reply
         if (index >= 0) {
-            updated[index] = ChatMessage(finalText, isUser = false, inferenceSeconds = inferenceSeconds)
+            val mode = updated[index].inferenceMode
+            updated[index] = ChatMessage(
+                finalText,
+                isUser = false,
+                inferenceSeconds = inferenceSeconds,
+                inferenceMode = mode
+            )
         } else {
             updated.add(ChatMessage(finalText, isUser = false, inferenceSeconds = inferenceSeconds))
         }
@@ -62,7 +68,7 @@ class MainViewModel(
     fun sendMessageQwen(text: String) {
         if (text.isBlank()) return
         appendUserMessage(text)
-        appendLoadingMessage()
+        appendLoadingMessage("network")
 
         viewModelScope.launch {
             var responseText = ""
@@ -87,7 +93,7 @@ class MainViewModel(
     fun sendMessageToZai(text: String) {
         if (text.isBlank()) return
         appendUserMessage(text)
-        appendLoadingMessage()
+        appendLoadingMessage("network")
 
         viewModelScope.launch {
             var responseText = ""
@@ -127,7 +133,7 @@ class MainViewModel(
     fun sendMessageToLocal(text: String) {
         if (text.isBlank()) return
         appendUserMessage(text)
-        appendLoadingMessage()
+        appendLoadingMessage("local")
 
         viewModelScope.launch {
             var reply = ""
@@ -195,7 +201,7 @@ class MainViewModel(
     fun sendMessageToServiceLlama(text: String) {
         if (text.isBlank()) return
         appendUserMessage(text)
-        appendLoadingMessage()
+        appendLoadingMessage("service")
 
         viewModelScope.launch {
             var reply = ""

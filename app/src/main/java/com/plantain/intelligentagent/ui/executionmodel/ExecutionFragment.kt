@@ -20,6 +20,7 @@ import com.drake.brv.utils.setup
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.graphics.drawable.GradientDrawable
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -72,6 +73,19 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
                                 "推理耗时 %.3f s",
                                 message.inferenceSeconds
                             )
+
+                            val backgroundColor = when (message.inferenceMode) {
+                                "network" -> 0xFF8BC34A.toInt()
+                                "local" -> 0xFFEF5350.toInt()
+                                "service" -> 0xFFFFD54F.toInt()
+                                else -> 0xFFFFD54F.toInt()
+                            }
+                            val shape = GradientDrawable().apply {
+                                shape = GradientDrawable.RECTANGLE
+                                cornerRadius = 8f
+                                setColor(backgroundColor)
+                            }
+                            aiInferenceTime.background = shape
                         } else {
                             aiInferenceTime.visibility = View.GONE
                         }
