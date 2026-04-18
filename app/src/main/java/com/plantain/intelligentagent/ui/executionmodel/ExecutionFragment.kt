@@ -33,7 +33,8 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentExecutionBinding.bind(view)
 
-        setWindowSoftInput(float = binding.inputBar)
+        // Float only the input bar; avoid translating the full fragment root.
+        setWindowSoftInput(float = binding.inputBar, transition = binding.inputBar)
 
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext()).apply {
             stackFromEnd = true
