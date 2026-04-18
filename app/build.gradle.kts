@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.okhttp.logging)
     implementation(libs.brv)
+    implementation(libs.soft.input.event)
 
     //导入本地LlamaKotlin库
     implementation(project(":LlamaKotlin"))

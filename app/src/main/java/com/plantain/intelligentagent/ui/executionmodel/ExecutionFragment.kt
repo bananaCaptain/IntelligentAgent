@@ -13,6 +13,7 @@ import com.plantain.intelligentagent.R
 import com.plantain.intelligentagent.data.model.ChatMessage
 import com.plantain.intelligentagent.databinding.FragmentExecutionBinding
 import com.plantain.intelligentagent.ui.MainViewModel
+import com.drake.softinput.setWindowSoftInput
 import com.drake.brv.utils.linear
 import com.drake.brv.utils.models
 import com.drake.brv.utils.setup
@@ -31,6 +32,8 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentExecutionBinding.bind(view)
+
+        setWindowSoftInput(float = binding.inputBar)
 
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext()).apply {
             stackFromEnd = true
