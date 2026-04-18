@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.system.measureNanoTime
 
 class MainViewModel(
     private val modelRepository: ModelRepository
@@ -37,14 +38,14 @@ class MainViewModel(
         _messages.value = current
     }
 
-    private fun completeLoadingMessage(reply: String, fallback: String) {
+    private fun completeLoadingMessage(reply: String, fallback: String, inferenceSeconds: Double? = null) {
         val updated = _messages.value.toMutableList()
         val index = updated.indexOfLast { !it.isUser && it.isLoading }
         val finalText = if (reply.isBlank()) fallback else reply
         if (index >= 0) {
-            updated[index] = ChatMessage(finalText, isUser = false)
+            updated[index] = ChatMessage(finalText, isUser = false, inferenceSeconds = inferenceSeconds)
         } else {
-            updated.add(ChatMessage(finalText, isUser = false))
+            updated.add(ChatMessage(finalText, isUser = false, inferenceSeconds = inferenceSeconds))
         }
         _messages.value = updated
     }
@@ -63,9 +64,18 @@ class MainViewModel(
         appendLoadingMessage()
 
         viewModelScope.launch {
-            runCatching { modelRepository.chat(text) }
+            var responseText = ""
+            var inferenceSeconds = 0.0
+            val result = runCatching {
+                val elapsedNanos = measureNanoTime {
+                    val response = modelRepository.chat(text)
+                    responseText = response.output?.text ?: ""
+                }
+                inferenceSeconds = elapsedNanos / 1_000_000_000.0
+            }
+            result
                 .onSuccess { response ->
-                    completeLoadingMessage(response.output?.text ?: "", "(empty)")
+                    completeLoadingMessage(responseText, "(empty)", inferenceSeconds)
                 }
                 .onFailure {
                     completeLoadingMessage("", "请求失败")
@@ -79,9 +89,18 @@ class MainViewModel(
         appendLoadingMessage()
 
         viewModelScope.launch {
-            runCatching { modelRepository.chatZai(text) }
+            var responseText = ""
+            var inferenceSeconds = 0.0
+            val result = runCatching {
+                val elapsedNanos = measureNanoTime {
+                    val response = modelRepository.chatZai(text)
+                    responseText = response.choices?.firstOrNull()?.message?.content ?: ""
+                }
+                inferenceSeconds = elapsedNanos / 1_000_000_000.0
+            }
+            result
                 .onSuccess { response ->
-                    completeLoadingMessage(response.choices?.firstOrNull()?.message?.content ?: "", "(empty)")
+                    completeLoadingMessage(responseText, "(empty)", inferenceSeconds)
                 }
                 .onFailure {
                     completeLoadingMessage("", "请求失败")
@@ -109,9 +128,17 @@ class MainViewModel(
         appendLoadingMessage()
 
         viewModelScope.launch {
-            runCatching { modelRepository.chatLocal(text) }
-                .onSuccess { reply ->
-                    completeLoadingMessage(reply, "(empty)")
+            var reply = ""
+            var inferenceSeconds = 0.0
+            val result = runCatching {
+                val elapsedNanos = measureNanoTime {
+                    reply = modelRepository.chatLocal(text)
+                }
+                inferenceSeconds = elapsedNanos / 1_000_000_000.0
+            }
+            result
+                .onSuccess {
+                    completeLoadingMessage(reply, "(empty)", inferenceSeconds)
                 }
                 .onFailure {
                     completeLoadingMessage("", "本地模型请求失败")
@@ -169,9 +196,17 @@ class MainViewModel(
         appendLoadingMessage()
 
         viewModelScope.launch {
-            runCatching { modelRepository.chatWithLlamaViaService(text) }
-                .onSuccess { reply ->
-                    completeLoadingMessage(reply, "(empty)")
+            var reply = ""
+            var inferenceSeconds = 0.0
+            val result = runCatching {
+                val elapsedNanos = measureNanoTime {
+                    reply = modelRepository.chatWithLlamaViaService(text)
+                }
+                inferenceSeconds = elapsedNanos / 1_000_000_000.0
+            }
+            result
+                .onSuccess {
+                    completeLoadingMessage(reply, "(empty)", inferenceSeconds)
                 }
                 .onFailure {
                     completeLoadingMessage("", "服务侧 Llama 请求失败")

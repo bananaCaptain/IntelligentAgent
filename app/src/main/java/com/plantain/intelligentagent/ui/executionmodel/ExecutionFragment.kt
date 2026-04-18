@@ -20,6 +20,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class ExecutionFragment : Fragment(R.layout.fragment_execution) {
 
@@ -44,6 +45,7 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
                 val userText = findView<TextView>(R.id.tvUserMessage)
                 val aiText = findView<TextView>(R.id.tvAiMessage)
                 val aiLoading = findView<ProgressBar>(R.id.aiLoading)
+                val aiInferenceTime = findView<TextView>(R.id.tvAiInferenceTime)
 
                 if (message.isUser) {
                     userBubble.visibility = View.VISIBLE
@@ -55,9 +57,20 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
                     if (message.isLoading) {
                         aiLoading.visibility = View.VISIBLE
                         aiText.text = "推理中..."
+                        aiInferenceTime.visibility = View.GONE
                     } else {
                         aiLoading.visibility = View.GONE
                         aiText.text = message.content
+                        if (message.inferenceSeconds != null) {
+                            aiInferenceTime.visibility = View.VISIBLE
+                            aiInferenceTime.text = String.format(
+                                Locale.US,
+                                "推理耗时 %.3f s",
+                                message.inferenceSeconds
+                            )
+                        } else {
+                            aiInferenceTime.visibility = View.GONE
+                        }
                     }
                 }
             }
