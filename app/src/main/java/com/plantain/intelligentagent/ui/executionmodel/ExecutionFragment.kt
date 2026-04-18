@@ -102,7 +102,7 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
                 else -> sharedViewModel.sendMessageToZai(text)
             }
 
-            binding.etMessage.text?.clear()
+//            binding.etMessage.text?.clear()
         }
     }
 
