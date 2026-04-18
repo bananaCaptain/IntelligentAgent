@@ -25,6 +25,30 @@ class MainViewModel(
     private val _serviceResultText = MutableStateFlow("")
     val serviceResultText: StateFlow<String> = _serviceResultText.asStateFlow()
 
+    private fun appendUserMessage(text: String) {
+        val current = _messages.value.toMutableList()
+        current.add(ChatMessage(text, true))
+        _messages.value = current
+    }
+
+    private fun appendLoadingMessage() {
+        val current = _messages.value.toMutableList()
+        current.add(ChatMessage("", isUser = false, isLoading = true))
+        _messages.value = current
+    }
+
+    private fun completeLoadingMessage(reply: String, fallback: String) {
+        val updated = _messages.value.toMutableList()
+        val index = updated.indexOfLast { !it.isUser && it.isLoading }
+        val finalText = if (reply.isBlank()) fallback else reply
+        if (index >= 0) {
+            updated[index] = ChatMessage(finalText, isUser = false)
+        } else {
+            updated.add(ChatMessage(finalText, isUser = false))
+        }
+        _messages.value = updated
+    }
+
     init {
         viewModelScope.launch {
             modelRepository.intelligentServiceBound.collectLatest { bound ->
@@ -35,44 +59,32 @@ class MainViewModel(
 
     fun sendMessage(text: String) {
         if (text.isBlank()) return
-        val current = _messages.value.toMutableList()
-        current.add(ChatMessage(text, true))
-        _messages.value = current
+        appendUserMessage(text)
+        appendLoadingMessage()
 
         viewModelScope.launch {
             runCatching { modelRepository.chat(text) }
                 .onSuccess { response ->
-                    val reply = response.output?.text ?: ""
-                    val updated = _messages.value.toMutableList()
-                    updated.add(ChatMessage(if (reply.isBlank()) "(empty)" else reply, false))
-                    _messages.value = updated
+                    completeLoadingMessage(response.output?.text ?: "", "(empty)")
                 }
                 .onFailure {
-                    val updated = _messages.value.toMutableList()
-                    updated.add(ChatMessage("请求失败", false))
-                    _messages.value = updated
+                    completeLoadingMessage("", "请求失败")
                 }
         }
     }
 
     fun sendMessageToZai(text: String) {
         if (text.isBlank()) return
-        val current = _messages.value.toMutableList()
-        current.add(ChatMessage(text, true))
-        _messages.value = current
+        appendUserMessage(text)
+        appendLoadingMessage()
 
         viewModelScope.launch {
             runCatching { modelRepository.chatZai(text) }
                 .onSuccess { response ->
-                    val reply = response.choices?.firstOrNull()?.message?.content ?: ""
-                    val updated = _messages.value.toMutableList()
-                    updated.add(ChatMessage(if (reply.isBlank()) "(empty)" else reply, false))
-                    _messages.value = updated
+                    completeLoadingMessage(response.choices?.firstOrNull()?.message?.content ?: "", "(empty)")
                 }
                 .onFailure {
-                    val updated = _messages.value.toMutableList()
-                    updated.add(ChatMessage("请求失败", false))
-                    _messages.value = updated
+                    completeLoadingMessage("", "请求失败")
                 }
         }
     }
@@ -93,21 +105,16 @@ class MainViewModel(
 
     fun sendMessageToLocal(text: String) {
         if (text.isBlank()) return
-        val current = _messages.value.toMutableList()
-        current.add(ChatMessage(text, true))
-        _messages.value = current
+        appendUserMessage(text)
+        appendLoadingMessage()
 
         viewModelScope.launch {
             runCatching { modelRepository.chatLocal(text) }
                 .onSuccess { reply ->
-                    val updated = _messages.value.toMutableList()
-                    updated.add(ChatMessage(if (reply.isBlank()) "(empty)" else reply, false))
-                    _messages.value = updated
+                    completeLoadingMessage(reply, "(empty)")
                 }
                 .onFailure {
-                    val updated = _messages.value.toMutableList()
-                    updated.add(ChatMessage("本地模型请求失败", false))
-                    _messages.value = updated
+                    completeLoadingMessage("", "本地模型请求失败")
                 }
         }
     }
@@ -158,21 +165,16 @@ class MainViewModel(
 
     fun sendMessageToServiceLlama(text: String) {
         if (text.isBlank()) return
-        val current = _messages.value.toMutableList()
-        current.add(ChatMessage(text, true))
-        _messages.value = current
+        appendUserMessage(text)
+        appendLoadingMessage()
 
         viewModelScope.launch {
             runCatching { modelRepository.chatWithLlamaViaService(text) }
                 .onSuccess { reply ->
-                    val updated = _messages.value.toMutableList()
-                    updated.add(ChatMessage(if (reply.isBlank()) "(empty)" else reply, false))
-                    _messages.value = updated
+                    completeLoadingMessage(reply, "(empty)")
                 }
                 .onFailure {
-                    val updated = _messages.value.toMutableList()
-                    updated.add(ChatMessage("服务侧 Llama 请求失败", false))
-                    _messages.value = updated
+                    completeLoadingMessage("", "服务侧 Llama 请求失败")
                 }
         }
     }

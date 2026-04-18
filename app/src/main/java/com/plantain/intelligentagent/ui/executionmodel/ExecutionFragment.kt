@@ -17,6 +17,7 @@ import com.drake.brv.utils.linear
 import com.drake.brv.utils.models
 import com.drake.brv.utils.setup
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import kotlinx.coroutines.launch
 
@@ -42,6 +43,7 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
                 val aiBubble = findView<LinearLayout>(R.id.aiBubble)
                 val userText = findView<TextView>(R.id.tvUserMessage)
                 val aiText = findView<TextView>(R.id.tvAiMessage)
+                val aiLoading = findView<ProgressBar>(R.id.aiLoading)
 
                 if (message.isUser) {
                     userBubble.visibility = View.VISIBLE
@@ -50,7 +52,13 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
                 } else {
                     userBubble.visibility = View.GONE
                     aiBubble.visibility = View.VISIBLE
-                    aiText.text = message.content
+                    if (message.isLoading) {
+                        aiLoading.visibility = View.VISIBLE
+                        aiText.text = "推理中..."
+                    } else {
+                        aiLoading.visibility = View.GONE
+                        aiText.text = message.content
+                    }
                 }
             }
         }
