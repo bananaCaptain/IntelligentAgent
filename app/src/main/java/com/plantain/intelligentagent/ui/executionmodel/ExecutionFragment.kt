@@ -19,12 +19,8 @@ import com.drake.brv.utils.setup
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import kotlinx.coroutines.launch
 import java.util.Locale
-import kotlin.math.max
 
 class ExecutionFragment : Fragment(R.layout.fragment_execution) {
 
@@ -35,26 +31,6 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentExecutionBinding.bind(view)
-
-        val inputBarPaddingLeft = binding.inputBar.paddingLeft
-        val inputBarPaddingTop = binding.inputBar.paddingTop
-        val inputBarPaddingRight = binding.inputBar.paddingRight
-        val inputBarPaddingBottom = binding.inputBar.paddingBottom
-
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
-            val systemBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
-            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-            val bottomInset = max(systemBottom, imeBottom)
-
-            binding.inputBar.updatePadding(
-                left = inputBarPaddingLeft,
-                top = inputBarPaddingTop,
-                right = inputBarPaddingRight,
-                bottom = inputBarPaddingBottom + bottomInset
-            )
-
-            insets
-        }
 
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext()).apply {
             stackFromEnd = true
