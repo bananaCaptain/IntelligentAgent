@@ -35,6 +35,11 @@ class MainViewModel(
     private val _inferMode = MutableStateFlow(InferModePreferences.defaultMode)
     val inferMode: StateFlow<String> = _inferMode.asStateFlow()
 
+    private val _localModelLoaded = MutableStateFlow(false)
+
+    private val _inferenceFailedPrompt = MutableStateFlow<String?>(null)
+    val inferenceFailedPrompt: StateFlow<String?> = _inferenceFailedPrompt.asStateFlow()
+
     fun setInferMode(mode: String) {
         _inferMode.value = mode
         viewModelScope.launch {
@@ -47,6 +52,35 @@ class MainViewModel(
             val saved = InferModePreferences.inferModeFlow(getApplication()).first()
             _inferMode.value = saved
         }
+    }
+
+    fun consumeInferenceFailure() {
+        _inferenceFailedPrompt.value = null
+    }
+
+    fun retryInferenceAutoMode() {
+        val prompt = _inferenceFailedPrompt.value ?: return
+        _inferenceFailedPrompt.value = null
+
+        // 检测当前环境状态，自动选择一个可用模式
+        val mode = when {
+            modelRepository.intelligentServiceBound.value -> "service"
+            _localModelLoaded.value -> "local"
+            else -> "network"
+        }
+        setInferMode(mode)
+
+        // 将最后一条失败消息替换为新的 loading 消息
+        val current = _messages.value.toMutableList()
+        val lastAiIndex = current.indexOfLast { !it.isUser }
+        if (lastAiIndex >= 0 && !current[lastAiIndex].isLoading) {
+            current[lastAiIndex] = ChatMessage("", isUser = false, isLoading = true, inferenceMode = mode)
+            _messages.value = current
+        } else {
+            appendLoadingMessage(mode)
+        }
+
+        startInference(prompt, mode)
     }
 
     private fun appendUserMessage(text: String) {
@@ -108,6 +142,7 @@ class MainViewModel(
                 }
                 .onFailure {
                     completeLoadingMessage("", "请求失败")
+                    _inferenceFailedPrompt.value = text
                 }
         }
     }
@@ -116,30 +151,13 @@ class MainViewModel(
         if (text.isBlank()) return
         appendUserMessage(text)
         appendLoadingMessage("network")
-
-        viewModelScope.launch {
-            var responseText = ""
-            var inferenceSeconds = 0.0
-            val result = runCatching {
-                val elapsedNanos = measureNanoTime {
-                    val response = modelRepository.chatZai(text)
-                    responseText = response.choices?.firstOrNull()?.message?.content ?: ""
-                }
-                inferenceSeconds = elapsedNanos / 1_000_000_000.0
-            }
-            result
-                .onSuccess { response ->
-                    completeLoadingMessage(responseText, "(empty)", inferenceSeconds)
-                }
-                .onFailure {
-                    completeLoadingMessage("", "请求失败")
-                }
-        }
+        startInference(text, "network")
     }
 
     fun loadLocalModel(modelPath: String, nCtx: Int = 2048) {
         viewModelScope.launch {
             val success = modelRepository.loadLocalModel(modelPath, nCtx)
+            _localModelLoaded.value = success
             val modelName = File(modelPath).name.ifBlank { modelPath }
             val current = _messages.value.toMutableList()
             if (success) {
@@ -156,24 +174,7 @@ class MainViewModel(
         if (text.isBlank()) return
         appendUserMessage(text)
         appendLoadingMessage("local")
-
-        viewModelScope.launch {
-            var reply = ""
-            var inferenceSeconds = 0.0
-            val result = runCatching {
-                val elapsedNanos = measureNanoTime {
-                    reply = modelRepository.chatLocal(text)
-                }
-                inferenceSeconds = elapsedNanos / 1_000_000_000.0
-            }
-            result
-                .onSuccess {
-                    completeLoadingMessage(reply, "(empty)", inferenceSeconds)
-                }
-                .onFailure {
-                    completeLoadingMessage("", "本地模型请求失败")
-                }
-        }
+        startInference(text, "local")
     }
 
     fun callServiceVerificationString() {
@@ -224,13 +225,20 @@ class MainViewModel(
         if (text.isBlank()) return
         appendUserMessage(text)
         appendLoadingMessage("service")
+        startInference(text, "service")
+    }
 
+    private fun startInference(text: String, mode: String) {
         viewModelScope.launch {
             var reply = ""
             var inferenceSeconds = 0.0
             val result = runCatching {
                 val elapsedNanos = measureNanoTime {
-                    reply = modelRepository.chatWithLlamaViaService(text)
+                    reply = when (mode) {
+                        "local" -> modelRepository.chatLocal(text)
+                        "service" -> modelRepository.chatWithLlamaViaService(text)
+                        else -> modelRepository.chatZai(text).choices?.firstOrNull()?.message?.content ?: ""
+                    }
                 }
                 inferenceSeconds = elapsedNanos / 1_000_000_000.0
             }
@@ -239,7 +247,12 @@ class MainViewModel(
                     completeLoadingMessage(reply, "(empty)", inferenceSeconds)
                 }
                 .onFailure {
-                    completeLoadingMessage("", "服务侧 Llama 请求失败")
+                    completeLoadingMessage("", when (mode) {
+                        "local" -> "本地模型请求失败"
+                        "service" -> "服务侧 Llama 请求失败"
+                        else -> "请求失败"
+                    })
+                    _inferenceFailedPrompt.value = text
                 }
         }
     }

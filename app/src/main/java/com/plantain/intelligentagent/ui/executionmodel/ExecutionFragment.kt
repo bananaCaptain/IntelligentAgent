@@ -3,6 +3,7 @@ package com.plantain.intelligentagent.ui.executionmodel
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -147,6 +148,32 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
 
 //            binding.etMessage.text?.clear()
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedViewModel.inferenceFailedPrompt.collect { failedPrompt ->
+                    if (failedPrompt != null) {
+                        showRetryDialog(failedPrompt)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showRetryDialog(failedPrompt: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("推理失败")
+            .setMessage("是否检测当前环境状态，自动切换推理模式并重试一次？")
+            .setPositiveButton("重试") { _, _ ->
+                sharedViewModel.retryInferenceAutoMode()
+            }
+            .setNegativeButton("取消") { _, _ ->
+                sharedViewModel.consumeInferenceFailure()
+            }
+            .setOnCancelListener {
+                sharedViewModel.consumeInferenceFailure()
+            }
+            .show()
     }
 
     override fun onDestroyView() {
