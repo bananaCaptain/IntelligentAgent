@@ -1,21 +1,26 @@
 package com.plantain.intelligentagent.ui
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.plantain.intelligentagent.data.model.ChatMessage
+import com.plantain.intelligentagent.data.preferences.InferModePreferences
 import com.plantain.intelligentagent.data.repository.ModelRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.system.measureNanoTime
 
 class MainViewModel(
+    application: Application,
     private val modelRepository: ModelRepository
-) : ViewModel() {
+) : AndroidViewModel(application) {
     var message: String = "Shared ViewModel"
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
@@ -26,6 +31,23 @@ class MainViewModel(
 
     private val _serviceResultText = MutableStateFlow("")
     val serviceResultText: StateFlow<String> = _serviceResultText.asStateFlow()
+
+    private val _inferMode = MutableStateFlow(InferModePreferences.defaultMode)
+    val inferMode: StateFlow<String> = _inferMode.asStateFlow()
+
+    fun setInferMode(mode: String) {
+        _inferMode.value = mode
+        viewModelScope.launch {
+            InferModePreferences.saveInferMode(getApplication(), mode)
+        }
+    }
+
+    fun loadSavedInferMode() {
+        viewModelScope.launch {
+            val saved = InferModePreferences.inferModeFlow(getApplication()).first()
+            _inferMode.value = saved
+        }
+    }
 
     private fun appendUserMessage(text: String) {
         val current = _messages.value.toMutableList()
@@ -223,13 +245,13 @@ class MainViewModel(
     }
 
     companion object {
-        fun getMainViewModelFactory(modelRepository: ModelRepository)
+        fun getMainViewModelFactory(application: Application, modelRepository: ModelRepository)
                 : ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
-                        return MainViewModel(modelRepository) as T
+                        return MainViewModel(application, modelRepository) as T
                     }
                     throw IllegalArgumentException("Unknown ViewModel class")
                 }

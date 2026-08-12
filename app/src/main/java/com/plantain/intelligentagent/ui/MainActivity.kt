@@ -18,6 +18,7 @@ class MainActivity : AppCompatActivity() {
 
     private val sharedViewModel: MainViewModel by viewModels {
         MainViewModel.getMainViewModelFactory(
+            application,
             ModelRepository(
                 qwenDataSource = QwenApiProvider.createDataSource(apiKey = "YOUR_QWEN_API_KEY"),
                 zaiDataSource = ZaiApiProvider.createDataSource(apiKey = "YOUR_ZAI_API_KEY"),

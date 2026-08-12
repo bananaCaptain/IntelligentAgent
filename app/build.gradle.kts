@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.brv)
     implementation(libs.soft.input.event)
+    implementation(libs.androidx.datastore.preferences)
 
     //导入本地LlamaKotlin库
     implementation(project(":LlamaKotlin"))

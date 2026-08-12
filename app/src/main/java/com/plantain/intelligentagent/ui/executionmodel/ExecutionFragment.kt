@@ -21,6 +21,8 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.graphics.drawable.GradientDrawable
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -36,6 +38,33 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
 
         // Float only the input bar; avoid translating the full fragment root.
         setWindowSoftInput(float = binding.inputBar, transition = binding.inputBar)
+
+        sharedViewModel.loadSavedInferMode()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedViewModel.inferMode.collect { mode ->
+                    val targetId = when (mode) {
+                        "local" -> R.id.rbLocalInfer
+                        "service" -> R.id.rbServiceInfer
+                        else -> R.id.rbNetworkInfer
+                    }
+                    if (binding.inferModeGroup.checkedRadioButtonId != targetId) {
+                        binding.inferModeGroup.check(targetId)
+                    }
+                }
+            }
+        }
+
+        binding.inferModeGroup.setOnCheckedChangeListener { _: RadioGroup, checkedId: Int ->
+            val mode = when (checkedId) {
+                R.id.rbNetworkInfer -> "network"
+                R.id.rbLocalInfer -> "local"
+                R.id.rbServiceInfer -> "service"
+                else -> "network"
+            }
+            sharedViewModel.setInferMode(mode)
+        }
 
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext()).apply {
             stackFromEnd = true
