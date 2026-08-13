@@ -8,6 +8,9 @@ import androidx.lifecycle.viewModelScope
 import com.plantain.intelligentagent.data.model.ChatMessage
 import com.plantain.intelligentagent.data.preferences.InferModePreferences
 import com.plantain.intelligentagent.data.repository.ModelRepository
+import com.plantain.intelligentagent.usecase.DeviceResourceUseCase
+import com.plantain.intelligentagent.usecase.NetworkStateUseCase
+import com.plantain.intelligentagent.usecase.ServiceAvailabilityUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +25,13 @@ class MainViewModel(
     private val modelRepository: ModelRepository
 ) : AndroidViewModel(application) {
     var message: String = "Shared ViewModel"
+
+    //
+    private val networkStateUseCase = NetworkStateUseCase(getApplication())
+    //
+    private val deviceResourceUseCase = DeviceResourceUseCase(getApplication())
+    //
+    private val serviceAvailabilityUseCase = ServiceAvailabilityUseCase(getApplication())
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
@@ -62,25 +72,48 @@ class MainViewModel(
         val prompt = _inferenceFailedPrompt.value ?: return
         _inferenceFailedPrompt.value = null
 
-        // 检测当前环境状态，自动选择一个可用模式
-        val mode = when {
-            modelRepository.intelligentServiceBound.value -> "service"
-            _localModelLoaded.value -> "local"
+        viewModelScope.launch {
+            // 综合网络状态、设备资源、服务可用性，自动选择一个可用模式
+            val mode = chooseInferenceMode()
+
+            setInferMode(mode)
+
+            // 将最后一条失败消息替换为新的 loading 消息
+            val current = _messages.value.toMutableList()
+            val lastAiIndex = current.indexOfLast { !it.isUser }
+            if (lastAiIndex >= 0 && !current[lastAiIndex].isLoading) {
+                current[lastAiIndex] = ChatMessage("", isUser = false, isLoading = true, inferenceMode = mode)
+                _messages.value = current
+            } else {
+                appendLoadingMessage(mode)
+            }
+
+            startInference(prompt, mode)
+        }
+    }
+
+    private suspend fun chooseInferenceMode(): String {
+        val network = networkStateUseCase.execute()
+        val resource = deviceResourceUseCase.execute()
+        val service = serviceAvailabilityUseCase.execute()
+
+        val serviceReady = service.isAvailable && modelRepository.intelligentServiceBound.value
+        val localReady = _localModelLoaded.value
+
+        return when {
+            // 服务可用且已绑定：优先复用共享服务模型，减少设备资源冗余
+            serviceReady -> "service"
+            // 弱网或离线：优先本地模型，其次共享服务模型
+            network.isOfflineOrWeakNetwork -> if (localReady) "local" else if (serviceReady) "service" else "network"
+            // 设备资源不足（内存/电量/温度）：优先云端模型，降低本地算力消耗与发热
+            resource.shouldUseCloudModel && network.isOnline -> "network"
+            // 强网环境（WiFi/5G）：优先云端模型，保障信息提取精度
+            network.isStrongNetwork -> "network"
+            // 资源充足且网络一般：优先本地推理
+            localReady -> "local"
+            // 兜底
             else -> "network"
         }
-        setInferMode(mode)
-
-        // 将最后一条失败消息替换为新的 loading 消息
-        val current = _messages.value.toMutableList()
-        val lastAiIndex = current.indexOfLast { !it.isUser }
-        if (lastAiIndex >= 0 && !current[lastAiIndex].isLoading) {
-            current[lastAiIndex] = ChatMessage("", isUser = false, isLoading = true, inferenceMode = mode)
-            _messages.value = current
-        } else {
-            appendLoadingMessage(mode)
-        }
-
-        startInference(prompt, mode)
     }
 
     private fun appendUserMessage(text: String) {
