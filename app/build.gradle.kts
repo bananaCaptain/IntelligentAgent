@@ -19,7 +19,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.brv)
     implementation(libs.soft.input.event)
+    implementation(libs.androidx.datastore.preferences)
 
     //导入本地LlamaKotlin库
     implementation(project(":LlamaKotlin"))

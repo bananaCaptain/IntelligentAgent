@@ -3,6 +3,7 @@ package com.plantain.intelligentagent.ui.executionmodel
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -21,6 +22,8 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.graphics.drawable.GradientDrawable
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -36,6 +39,33 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
 
         // Float only the input bar; avoid translating the full fragment root.
         setWindowSoftInput(float = binding.inputBar, transition = binding.inputBar)
+
+        sharedViewModel.loadSavedInferMode()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedViewModel.inferMode.collect { mode ->
+                    val targetId = when (mode) {
+                        "local" -> R.id.rbLocalInfer
+                        "service" -> R.id.rbServiceInfer
+                        else -> R.id.rbNetworkInfer
+                    }
+                    if (binding.inferModeGroup.checkedRadioButtonId != targetId) {
+                        binding.inferModeGroup.check(targetId)
+                    }
+                }
+            }
+        }
+
+        binding.inferModeGroup.setOnCheckedChangeListener { _: RadioGroup, checkedId: Int ->
+            val mode = when (checkedId) {
+                R.id.rbNetworkInfer -> "network"
+                R.id.rbLocalInfer -> "local"
+                R.id.rbServiceInfer -> "service"
+                else -> "network"
+            }
+            sharedViewModel.setInferMode(mode)
+        }
 
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext()).apply {
             stackFromEnd = true
@@ -118,6 +148,32 @@ class ExecutionFragment : Fragment(R.layout.fragment_execution) {
 
 //            binding.etMessage.text?.clear()
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sharedViewModel.inferenceFailedPrompt.collect { failedPrompt ->
+                    if (failedPrompt != null) {
+                        showRetryDialog(failedPrompt)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showRetryDialog(failedPrompt: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("推理失败")
+            .setMessage("是否检测当前环境状态，自动切换推理模式并重试一次？")
+            .setPositiveButton("重试") { _, _ ->
+                sharedViewModel.retryInferenceAutoMode()
+            }
+            .setNegativeButton("取消") { _, _ ->
+                sharedViewModel.consumeInferenceFailure()
+            }
+            .setOnCancelListener {
+                sharedViewModel.consumeInferenceFailure()
+            }
+            .show()
     }
 
     override fun onDestroyView() {

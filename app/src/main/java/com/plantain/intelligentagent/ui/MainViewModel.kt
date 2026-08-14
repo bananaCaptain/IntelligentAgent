@@ -1,22 +1,38 @@
 package com.plantain.intelligentagent.ui
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.plantain.intelligentagent.data.model.ChatMessage
+import com.plantain.intelligentagent.data.preferences.InferModePreferences
 import com.plantain.intelligentagent.data.repository.ModelRepository
+import com.plantain.intelligentagent.usecase.DeviceResourceUseCase
+import com.plantain.intelligentagent.usecase.InferenceModeResolver
+import com.plantain.intelligentagent.usecase.NetworkStateUseCase
+import com.plantain.intelligentagent.usecase.ServiceAvailabilityUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.system.measureNanoTime
 
 class MainViewModel(
+    application: Application,
     private val modelRepository: ModelRepository
-) : ViewModel() {
+) : AndroidViewModel(application) {
     var message: String = "Shared ViewModel"
+
+    //
+    private val networkStateUseCase = NetworkStateUseCase(getApplication())
+    //
+    private val deviceResourceUseCase = DeviceResourceUseCase(getApplication())
+    //
+    private val serviceAvailabilityUseCase = ServiceAvailabilityUseCase(getApplication())
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
@@ -26,6 +42,70 @@ class MainViewModel(
 
     private val _serviceResultText = MutableStateFlow("")
     val serviceResultText: StateFlow<String> = _serviceResultText.asStateFlow()
+
+    private val _inferMode = MutableStateFlow(InferModePreferences.defaultMode)
+    val inferMode: StateFlow<String> = _inferMode.asStateFlow()
+
+    private val _localModelLoaded = MutableStateFlow(false)
+
+    private val _inferenceFailedPrompt = MutableStateFlow<String?>(null)
+    val inferenceFailedPrompt: StateFlow<String?> = _inferenceFailedPrompt.asStateFlow()
+
+    fun setInferMode(mode: String) {
+        _inferMode.value = mode
+        viewModelScope.launch {
+            InferModePreferences.saveInferMode(getApplication(), mode)
+        }
+    }
+
+    fun loadSavedInferMode() {
+        viewModelScope.launch {
+            val saved = InferModePreferences.inferModeFlow(getApplication()).first()
+            _inferMode.value = saved
+        }
+    }
+
+    fun consumeInferenceFailure() {
+        _inferenceFailedPrompt.value = null
+    }
+
+    fun retryInferenceAutoMode() {
+        val prompt = _inferenceFailedPrompt.value ?: return
+        _inferenceFailedPrompt.value = null
+
+        viewModelScope.launch {
+            // 综合网络状态、设备资源、服务可用性，自动选择一个可用模式
+            val mode = chooseInferenceMode()
+
+            setInferMode(mode)
+
+            // 将最后一条失败消息替换为新的 loading 消息
+            val current = _messages.value.toMutableList()
+            val lastAiIndex = current.indexOfLast { !it.isUser }
+            if (lastAiIndex >= 0 && !current[lastAiIndex].isLoading) {
+                current[lastAiIndex] = ChatMessage("", isUser = false, isLoading = true, inferenceMode = mode)
+                _messages.value = current
+            } else {
+                appendLoadingMessage(mode)
+            }
+
+            startInference(prompt, mode)
+        }
+    }
+
+    private suspend fun chooseInferenceMode(): String {
+        val network = networkStateUseCase.execute()
+        val resource = deviceResourceUseCase.execute()
+        val service = serviceAvailabilityUseCase.execute()
+
+        return InferenceModeResolver.resolve(
+            network = network,
+            resource = resource,
+            serviceAvailable = service.isAvailable,
+            serviceBound = modelRepository.intelligentServiceBound.value,
+            localModelLoaded = _localModelLoaded.value
+        )
+    }
 
     private fun appendUserMessage(text: String) {
         val current = _messages.value.toMutableList()
@@ -86,6 +166,7 @@ class MainViewModel(
                 }
                 .onFailure {
                     completeLoadingMessage("", "请求失败")
+                    _inferenceFailedPrompt.value = text
                 }
         }
     }
@@ -94,30 +175,13 @@ class MainViewModel(
         if (text.isBlank()) return
         appendUserMessage(text)
         appendLoadingMessage("network")
-
-        viewModelScope.launch {
-            var responseText = ""
-            var inferenceSeconds = 0.0
-            val result = runCatching {
-                val elapsedNanos = measureNanoTime {
-                    val response = modelRepository.chatZai(text)
-                    responseText = response.choices?.firstOrNull()?.message?.content ?: ""
-                }
-                inferenceSeconds = elapsedNanos / 1_000_000_000.0
-            }
-            result
-                .onSuccess { response ->
-                    completeLoadingMessage(responseText, "(empty)", inferenceSeconds)
-                }
-                .onFailure {
-                    completeLoadingMessage("", "请求失败")
-                }
-        }
+        startInference(text, "network")
     }
 
     fun loadLocalModel(modelPath: String, nCtx: Int = 2048) {
         viewModelScope.launch {
             val success = modelRepository.loadLocalModel(modelPath, nCtx)
+            _localModelLoaded.value = success
             val modelName = File(modelPath).name.ifBlank { modelPath }
             val current = _messages.value.toMutableList()
             if (success) {
@@ -134,24 +198,7 @@ class MainViewModel(
         if (text.isBlank()) return
         appendUserMessage(text)
         appendLoadingMessage("local")
-
-        viewModelScope.launch {
-            var reply = ""
-            var inferenceSeconds = 0.0
-            val result = runCatching {
-                val elapsedNanos = measureNanoTime {
-                    reply = modelRepository.chatLocal(text)
-                }
-                inferenceSeconds = elapsedNanos / 1_000_000_000.0
-            }
-            result
-                .onSuccess {
-                    completeLoadingMessage(reply, "(empty)", inferenceSeconds)
-                }
-                .onFailure {
-                    completeLoadingMessage("", "本地模型请求失败")
-                }
-        }
+        startInference(text, "local")
     }
 
     fun callServiceVerificationString() {
@@ -202,13 +249,20 @@ class MainViewModel(
         if (text.isBlank()) return
         appendUserMessage(text)
         appendLoadingMessage("service")
+        startInference(text, "service")
+    }
 
+    private fun startInference(text: String, mode: String) {
         viewModelScope.launch {
             var reply = ""
             var inferenceSeconds = 0.0
             val result = runCatching {
                 val elapsedNanos = measureNanoTime {
-                    reply = modelRepository.chatWithLlamaViaService(text)
+                    reply = when (mode) {
+                        "local" -> modelRepository.chatLocal(text)
+                        "service" -> modelRepository.chatWithLlamaViaService(text)
+                        else -> modelRepository.chatZai(text).choices?.firstOrNull()?.message?.content ?: ""
+                    }
                 }
                 inferenceSeconds = elapsedNanos / 1_000_000_000.0
             }
@@ -217,19 +271,24 @@ class MainViewModel(
                     completeLoadingMessage(reply, "(empty)", inferenceSeconds)
                 }
                 .onFailure {
-                    completeLoadingMessage("", "服务侧 Llama 请求失败")
+                    completeLoadingMessage("", when (mode) {
+                        "local" -> "本地模型请求失败"
+                        "service" -> "服务侧 Llama 请求失败"
+                        else -> "请求失败"
+                    })
+                    _inferenceFailedPrompt.value = text
                 }
         }
     }
 
     companion object {
-        fun getMainViewModelFactory(modelRepository: ModelRepository)
+        fun getMainViewModelFactory(application: Application, modelRepository: ModelRepository)
                 : ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
-                        return MainViewModel(modelRepository) as T
+                        return MainViewModel(application, modelRepository) as T
                     }
                     throw IllegalArgumentException("Unknown ViewModel class")
                 }
