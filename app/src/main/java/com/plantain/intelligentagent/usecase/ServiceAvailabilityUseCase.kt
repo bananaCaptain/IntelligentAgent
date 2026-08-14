@@ -29,8 +29,7 @@ class ServiceAvailabilityUseCase(private val context: Context) {
 
     private fun isServiceAppRunning(): Boolean {
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        // PkgList requires only visibility; on API 29+ without visible apps this may be
-        // restricted, fall back to checking an AIDL bound state elsewhere if needed.
+
         return try {
             am.runningAppProcesses
                 ?.any { it.pkgList.contains(SERVICE_PACKAGE) }

@@ -7,6 +7,10 @@ import android.telephony.TelephonyManager
 
 /**
  * 使用案例检查设备的当前网络状态。
+ *
+ *
+ * @param context 上下文对象，用于访问系统服务。
+ * @return NetworkStateResult 包含网络类型、连接状态和在线状态。
  */
 class NetworkStateUseCase(private val context: Context) {
 

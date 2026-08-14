@@ -33,14 +33,17 @@ class DeviceResourceUseCase(private val context: Context) {
     }
 
     private fun readBatteryState(): Pair<Int, Float> {
-        val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val intent = context.registerReceiver(null,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED))
             ?: return Pair(-1, -1f)
 
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
         val percent = if (level >= 0 && scale > 0) level * 100 / scale else -1
 
-        val temperatureTenths = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1)
+        val temperatureTenths = intent.getIntExtra(
+            BatteryManager.EXTRA_TEMPERATURE, -1
+        )
         val tempCelsius = if (temperatureTenths >= 0) temperatureTenths / 10f else -1f
 
         return Pair(percent, tempCelsius)
