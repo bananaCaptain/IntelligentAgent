@@ -9,6 +9,7 @@ import com.plantain.intelligentagent.data.model.ChatMessage
 import com.plantain.intelligentagent.data.preferences.InferModePreferences
 import com.plantain.intelligentagent.data.repository.ModelRepository
 import com.plantain.intelligentagent.usecase.DeviceResourceUseCase
+import com.plantain.intelligentagent.usecase.InferenceModeResolver
 import com.plantain.intelligentagent.usecase.NetworkStateUseCase
 import com.plantain.intelligentagent.usecase.ServiceAvailabilityUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,23 +98,13 @@ class MainViewModel(
         val resource = deviceResourceUseCase.execute()
         val service = serviceAvailabilityUseCase.execute()
 
-        val serviceReady = service.isAvailable && modelRepository.intelligentServiceBound.value
-        val localReady = _localModelLoaded.value
-
-        return when {
-            // 服务可用且已绑定：优先复用共享服务模型，减少设备资源冗余
-            serviceReady -> "service"
-            // 弱网或离线：优先本地模型，其次共享服务模型
-            network.isOfflineOrWeakNetwork -> if (localReady) "local" else if (serviceReady) "service" else "network"
-            // 设备资源不足（内存/电量/温度）：优先云端模型，降低本地算力消耗与发热
-            resource.shouldUseCloudModel && network.isOnline -> "network"
-            // 强网环境（WiFi/5G）：优先云端模型，保障信息提取精度
-            network.isStrongNetwork -> "network"
-            // 资源充足且网络一般：优先本地推理
-            localReady -> "local"
-            // 兜底
-            else -> "network"
-        }
+        return InferenceModeResolver.resolve(
+            network = network,
+            resource = resource,
+            serviceAvailable = service.isAvailable,
+            serviceBound = modelRepository.intelligentServiceBound.value,
+            localModelLoaded = _localModelLoaded.value
+        )
     }
 
     private fun appendUserMessage(text: String) {
